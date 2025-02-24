@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Update Spyder info",
+  "description": "This is the information required to update Spyder",
+  "type": "object",
+  "properties": {
+    "install_file": {
+      "type": "string",
+      "default": "",
+      "description": "Path to the installation file."
+    },
+    "conda_exec": {
+      "type": "string",
+      "default": "",
+      "description": "Path to the conda executable."
+    },
+    "env_path": {
+      "type": "string",
+      "default": "",
+      "description": "Path to the Spyder runtime environment."
+    },
+    "update_type": {
+      "type": "string",
+      "default": "minor",
+      "enum": ["minor", "major"],
+      "description": "Type of update to be performed."
+    },
+    "window_title": {
+      "type": "string",
+      "default": "",
+      "description": "Title for the window that will display the UI."
+    },
+    "scale_factor": {
+      "type": "number",
+      "default": 1,
+      "description": "Scale factor at which Spyder is displayed."
+    },
+    "initial_message": {
+      "type": "string",
+      "default": "",
+      "description": "Initial message to show in the UI."
+    },
+    "font_family": {
+      "type": "string",
+      "default": "",
+      "description": "Font family to use in the UI."
+    },
+    "font_size": {
+      "type": "integer",
+      "default": 10,
+      "description": "Font size to use in the UI."
+    },
+    "interface_theme": {
+      "type": "string",
+      "default": "",
+      "description": "Interface theme to set for the UI to match the Spyder one."
+    },
+    "icon_color": {
+      "type": "string",
+      "default": "",
+      "description": "Color for icons in the UI."
+    }
+  },
+  "required": [
+    "install_file",
+    "conda_exec",
+    "env_path",
+    "update_type",
+    "window_title",
+    "scale_factor",
+    "initial_message",
+    "font_family",
+    "font_size",
+    "interface_theme",
+    "icon_color"
+  ]
+}
