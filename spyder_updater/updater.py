@@ -8,12 +8,22 @@
 from pathlib import Path
 
 # Third-party imports
+import qdarkstyle
 import qstylizer.style
 import qtawesome as qta
 from qtpy.QtCore import Qt, QSize
 from qtpy.QtGui import QImage, QPainter, QPixmap
 from qtpy.QtSvg import QSvgRenderer
-from qtpy.QtWidgets import QDialog, QLabel, QSpacerItem, QVBoxLayout
+from qtpy.QtWidgets import (
+    QDialog,
+    QLabel,
+    QLayout,
+    QPlainTextEdit,
+    QPushButton,
+    QSpacerItem,
+    QVBoxLayout
+)
+from superqt import QCollapsible
 
 
 def svg_to_scaled_pixmap(scale_factor, theme, rescale=None):
@@ -66,6 +76,133 @@ def svg_to_scaled_pixmap(scale_factor, theme, rescale=None):
     return final_pm
 
 
+class CollapsibleWidget(QCollapsible):
+    """Collapsible widget to hide and show child widgets."""
+
+    def __init__(self, parent, update_info):
+        super().__init__(title=update_info["details_title"], parent=parent)
+        self._update_info = update_info
+
+        if self._update_info["interface_theme"] == "dark":
+            self._palette = qdarkstyle.DarkPalette
+        else:
+            self._palette = qdarkstyle.LightPalette
+
+        # Remove spacing between toggle button and contents area
+        self.layout().setSpacing(0)
+
+        # Set icons
+        self.setCollapsedIcon(
+            qta.icon(
+                "mdi.chevron-right",
+                color=self._update_info["icon_color"],
+            )
+        )
+        self.setExpandedIcon(
+            qta.icon(
+                "mdi.chevron-down",
+                color=self._update_info["icon_color"],
+            )
+        )
+
+        # To change the style only of these widgets
+        self._toggle_btn.setObjectName("collapsible-toggle")
+        self.content().setObjectName("collapsible-content")
+
+        # Add padding to the inside content
+        self.content().layout().setContentsMargins(*((12,) * 4))
+
+        # Set stylesheet
+        self._css = self._generate_stylesheet()
+        self.setStyleSheet(self._css.toString())
+
+        # Signals
+        self.toggled.connect(self._on_toggled)
+
+        # Set our properties for the toggle button
+        self._set_toggle_btn_properties()
+
+    def set_content_bottom_margin(self, bottom_margin):
+        """Set bottom margin of the content area to `bottom_margin`."""
+        margins = self.content().layout().contentsMargins()
+        margins.setBottom(bottom_margin)
+        self.content().layout().setContentsMargins(margins)
+
+    def set_content_right_margin(self, right_margin):
+        """Set right margin of the content area to `right_margin`."""
+        margins = self.content().layout().contentsMargins()
+        margins.setRight(right_margin)
+        self.content().layout().setContentsMargins(margins)
+
+    def sizeHint(self):
+        return QSize(600, 10)
+
+    def _generate_stylesheet(self):
+        """Generate base stylesheet for this widget."""
+        css = qstylizer.style.StyleSheet()
+
+        # --- Style for the header button
+        css["QPushButton#collapsible-toggle"].setValues(
+            # Increase padding (the default one is too small).
+            padding="9px 9px 9px 6px",
+            # Make it a bit different from a default QPushButton to not drag
+            # the same amount of attention to it.
+            backgroundColor=self._palette.COLOR_BACKGROUND_3
+        )
+
+        # Make hover color match the change of background color above
+        css["QPushButton#collapsible-toggle:hover"].setValues(
+            backgroundColor=self._palette.COLOR_BACKGROUND_4,
+        )
+
+        # --- Style for the contents area
+        css["QWidget#collapsible-content"].setValues(
+            # Remove top border to make it appear attached to the header button
+            borderTop="0px",
+            # Add border to the other edges
+            border=f'1px solid {self._palette.COLOR_BACKGROUND_4}',
+            # Add border radius to the bottom to make it match the style of our
+            # other widgets.
+            borderBottomLeftRadius=f'{self._palette.SIZE_BORDER_RADIUS}',
+            borderBottomRightRadius=f'{self._palette.SIZE_BORDER_RADIUS}',
+        )
+
+        return css
+
+    def _on_toggled(self, state):
+        """Adjustments when the button is toggled."""
+        if state:
+            # Remove bottom rounded borders from the header when the widget is
+            # expanded.
+            self._css["QPushButton#collapsible-toggle"].setValues(
+                borderBottomLeftRadius='0px',
+                borderBottomRightRadius='0px',
+            )
+        else:
+            # Restore bottom rounded borders to the header when the widget is
+            # collapsed.
+            self._css["QPushButton#collapsible-toggle"].setValues(
+                borderBottomLeftRadius=f'{self._palette.SIZE_BORDER_RADIUS}',
+                borderBottomRightRadius=f'{self._palette.SIZE_BORDER_RADIUS}',
+            )
+
+        self.setStyleSheet(self._css.toString())
+
+    def _set_toggle_btn_properties(self):
+        """Set properties for the toogle button."""
+
+        def enter_event(event):
+            self.setCursor(Qt.PointingHandCursor)
+            super(QPushButton, self._toggle_btn).enterEvent(event)
+
+        def leave_event(event):
+            self.setCursor(Qt.ArrowCursor)
+            super(QPushButton, self._toggle_btn).leaveEvent(event)
+
+        self.toggleButton().enterEvent = enter_event
+        self.toggleButton().leaveEvent = leave_event
+
+
 class Updater(QDialog):
 
     def __init__(self, update_info: dict):
@@ -80,8 +217,6 @@ class Updater(QDialog):
 
         # Window adjustments
         self.setWindowTitle(self._update_info["window_title"])
-        self.setMinimumWidth(650)
-        self.setMinimumHeight(350)
 
         # Hide window close button so it can't be closed while performing the
         # update.
@@ -127,28 +262,43 @@ class Updater(QDialog):
         spin_widget.setStyleSheet(image_label_qss.toString())
         spin_widget.setAlignment(Qt.AlignCenter)
 
+        # Area to show stdout/stderr streams of the process that performs the
+        # update
+        self._streams_area = QPlainTextEdit(self)
+        self._streams_area.setMinimumHeight(300)
+        self._streams_area.setReadOnly(True)
+        streams_areda_css = qstylizer.style.StyleSheet()
+        streams_areda_css.QPlainTextEdit.setValues(
+            border="0px",
+        )
+        self._streams_area.setStyleSheet(streams_areda_css.toString())
+
+        # Details
+        details = CollapsibleWidget(self, update_info)
+        details.addWidget(self._streams_area)
+
         # Setup layout
         layout = QVBoxLayout()
         layout.addStretch(1)
         layout.addWidget(image_label)
         layout.addWidget(text_label)
-        layout.addItem(QSpacerItem(20, 20))
+        layout.addItem(QSpacerItem(10, 10))
         layout.addWidget(spin_widget)
+        layout.addItem(QSpacerItem(12, 12))
+        layout.addWidget(details)
         layout.addStretch(1)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setContentsMargins(30, 30, 30, 30)
         self.setLayout(layout)
+        self.layout().setSizeConstraint(QLayout.SetFixedSize)
 
     def _hide_close_button(self, hide):
         if hide:
             self.setWindowFlags(
-                Qt.Window
-                | Qt.WindowMinimizeButtonHint
-                | Qt.WindowMaximizeButtonHint
+                Qt.Window | Qt.WindowMinimizeButtonHint
             )
         else:
             self.setWindowFlags(
                 Qt.Window
                 | Qt.WindowMinimizeButtonHint
-                | Qt.WindowMaximizeButtonHint
                 | Qt.WindowCloseButtonHint
             )

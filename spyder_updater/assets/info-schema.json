@@ -40,6 +40,11 @@
       "default": "",
       "description": "Initial message to show in the UI."
     },
+    "details_title": {
+      "type": "string",
+      "default": "",
+      "description": "Title to show on the top of the Show details widget."
+    },
     "font_family": {
       "type": "string",
       "default": "",
@@ -69,6 +74,7 @@
     "window_title",
     "scale_factor",
     "initial_message",
+    "details_title",
     "font_family",
     "font_size",
     "interface_theme",
