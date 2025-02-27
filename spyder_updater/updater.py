@@ -5,14 +5,17 @@
 """Graphical interface that performs the update process."""
 
 # Standard library imports
+import os
 from pathlib import Path
+import shutil
+import sys
 
 # Third-party imports
 import qdarkstyle
 import qstylizer.style
 import qtawesome as qta
-from qtpy.QtCore import Qt, QSize
-from qtpy.QtGui import QImage, QPainter, QPixmap
+from qtpy.QtCore import QByteArray, QProcess, QSize, Qt, QTimer
+from qtpy.QtGui import QImage, QPainter, QPixmap, QTextCursor
 from qtpy.QtSvg import QSvgRenderer
 from qtpy.QtWidgets import (
     QDialog,
@@ -215,13 +218,29 @@ class Updater(QDialog):
         self.env_path = self._update_info["env_path"]
         self.update_type = self._update_info["update_type"]
 
+        # Process to run the installation scripts
+        self._process = QProcess(self)
+        self._process.setProcessChannelMode(QProcess.MergedChannels)
+        self._process.readyReadStandardOutput.connect(self._update_details)
+        self._process.readyReadStandardError.connect(
+            lambda: self._update_details(error=True)
+        )
+        self._process.finished.connect(self._handle_process_finished)
+        self._process.errorOccurred.connect(self._handle_error)
+
         # Window adjustments
         self.setWindowTitle(self._update_info["window_title"])
+        self.setWindowFlags(
+            Qt.Window | Qt.WindowMinimizeButtonHint | Qt.WindowCloseButtonHint
+        )
 
-        # Hide window close button so it can't be closed while performing the
-        # update.
-        # TODO: Change this to True when the UI is ready!
-        self._hide_close_button(False)
+        # Timer to close the window automatically after the update finishes
+        self._close_timer = QTimer(self)
+        self._close_timer.setInterval(8000)
+        self._close_timer.timeout.connect(self.close)
+
+        # To check if the update is done
+        self._update_done = False
 
         # Image (icon)
         image_label = QLabel(self)
@@ -238,29 +257,31 @@ class Updater(QDialog):
         image_label.setStyleSheet(image_label_qss.toString())
 
         # Main text
-        font_size = self._update_info["font_size"]
-        text_label = QLabel(self._update_info["initial_message"], parent=self)
-        text_label.setAlignment(Qt.AlignCenter)
-        text_label.setWordWrap(True)
+        self._text_label = QLabel(
+            self._update_info["initial_message"], parent=self
+        )
+        self._text_label.setAlignment(Qt.AlignCenter)
+        self._text_label.setWordWrap(True)
         text_label_qss = qstylizer.style.StyleSheet()
         text_label_qss.QLabel.setValues(
-            fontSize=f"{font_size + 5}pt", border="0px"
+            fontSize=f"{self._update_info['font_size'] + 5}pt",
+            border="0px"
         )
-        text_label.setStyleSheet(text_label_qss.toString())
+        self._text_label.setStyleSheet(text_label_qss.toString())
 
         # Spinner
-        spin_widget = qta.IconWidget()
-        self._spin = qta.Spin(spin_widget, interval=3)
+        self._spin_widget = qta.IconWidget()
+        self._spin = qta.Spin(self._spin_widget, interval=3)
         spin_icon = qta.icon(
             "mdi.loading",
             color=self._update_info["icon_color"],
             animation=self._spin
         )
 
-        spin_widget.setIconSize(QSize(36, 36))
-        spin_widget.setIcon(spin_icon)
-        spin_widget.setStyleSheet(image_label_qss.toString())
-        spin_widget.setAlignment(Qt.AlignCenter)
+        self._spin_widget.setIconSize(QSize(36, 36))
+        self._spin_widget.setIcon(spin_icon)
+        self._spin_widget.setStyleSheet(image_label_qss.toString())
+        self._spin_widget.setAlignment(Qt.AlignCenter)
 
         # Area to show stdout/stderr streams of the process that performs the
         # update
@@ -269,6 +290,8 @@ class Updater(QDialog):
         self._streams_area.setReadOnly(True)
         streams_areda_css = qstylizer.style.StyleSheet()
         streams_areda_css.QPlainTextEdit.setValues(
+            fontFamily=f"{self._update_info['monospace_font_family']}",
+            fontSize=f"{self._update_info['monospace_font_size']}pt",
             border="0px",
         )
         self._streams_area.setStyleSheet(streams_areda_css.toString())
@@ -277,28 +300,117 @@ class Updater(QDialog):
         details = CollapsibleWidget(self, update_info)
         details.addWidget(self._streams_area)
 
+        # Timer to expand the details area
+        self._expand_details_timer = QTimer(self)
+        self._expand_details_timer.setInterval(300)
+        self._expand_details_timer.setSingleShot(True)
+        self._expand_details_timer.timeout.connect(
+            lambda: details.expand(animate=False)
+        )
+
         # Setup layout
         layout = QVBoxLayout()
+        layout.setSpacing(0)
         layout.addStretch(1)
         layout.addWidget(image_label)
-        layout.addWidget(text_label)
-        layout.addItem(QSpacerItem(10, 10))
-        layout.addWidget(spin_widget)
+        layout.addWidget(self._text_label)
         layout.addItem(QSpacerItem(12, 12))
+        layout.addWidget(self._spin_widget)
+        layout.addItem(QSpacerItem(8, 8))
         layout.addWidget(details)
-        layout.addStretch(1)
-        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setContentsMargins(24, 24, 24, 24)
         self.setLayout(layout)
         self.layout().setSizeConstraint(QLayout.SetFixedSize)
 
-    def _hide_close_button(self, hide):
-        if hide:
-            self.setWindowFlags(
-                Qt.Window | Qt.WindowMinimizeButtonHint
-            )
+    # ---- Qt methods
+    # -------------------------------------------------------------------------
+    def closeEvent(self, event):
+        # Prevent window to be closed while performing the update
+        if not self._update_done:
+            event.ignore()
         else:
-            self.setWindowFlags(
-                Qt.Window
-                | Qt.WindowMinimizeButtonHint
-                | Qt.WindowCloseButtonHint
-            )
+            event.accept()
+
+    # ---- Private API
+    # -------------------------------------------------------------------------
+    def _add_text_to_streams_area(self, text):
+        self._streams_area.moveCursor(QTextCursor.End)
+        self._streams_area.appendHtml(text)
+        self._streams_area.moveCursor(QTextCursor.End)
+
+    def _when_update_is_done(self):
+        self._update_done = True
+        self._spin.stop()
+        self._spin_widget.hide()
+
+    def _expand_details(self):
+        # We need to use a timer so that Qt centers the dialog first
+        self._expand_details_timer.start()
+
+    def _update_details(self, error=False):
+        if error:
+            self._process.setReadChannel(QProcess.StandardError)
+        else:
+            self._process.setReadChannel(QProcess.StandardOutput)
+
+        qba = QByteArray()
+        while self._process.bytesAvailable():
+            if error:
+                qba += self._process.readAllStandardError()
+            else:
+                qba += self._process.readAllStandardOutput()
+
+        text = str(qba.data(), "utf-8")
+        self._add_text_to_streams_area(text)
+
+    def _handle_process_finished(self, exit_code, exit_status):
+        self._when_update_is_done()
+
+        if exit_code == 0 and exit_status == QProcess.NormalExit:
+            self._text_label.setText(self._update_info["success_message"])
+            self._close_timer.start()
+        else:
+            self._text_label.setText(self._update_info["failure_message"])
+            self._expand_details()
+
+    def _handle_error(self, error):
+        self._when_update_is_done()
+        self._text_label.setText(self._update_info["error_message"])
+
+        if error == QProcess.FailedToStart:
+            text = "The process failed to start"
+        elif error == QProcess.Crashed:
+            text = "The process crashed"
+        else:
+            text = "Unknown error. Please retry the update again"
+
+        self._add_text_to_streams_area(text)
+        self._expand_details()
+
+    # ---- Public API
+    # -------------------------------------------------------------------------
+    def start_install(self):
+        # Install script
+        script_name = 'install.' + ('bat' if os.name == 'nt' else 'sh')
+        script_path = str(Path(__file__).parent / 'scripts' / script_name)
+
+        # Sub command
+        sub_cmd = [script_path, '-i', self.install_file]
+        if self.update_type != 'major':
+            # Update with conda
+            sub_cmd.extend(['-c', self.conda_exec, '-p', self.env_path])
+
+        if self.update_type == 'minor':
+            # Rebuild runtime environment
+            sub_cmd.append('-r')
+
+        # Final command assembly
+        if os.name == 'nt':
+            cmd = ['start', '"Update Spyder"'] + sub_cmd
+        elif sys.platform == "darwin":
+            cmd = [shutil.which("zsh")] + sub_cmd
+        else:
+            cmd = [shutil.which("bash")] + sub_cmd
+
+        print(f"""Update command: "{' '.join(cmd)}" """)
+        self._process.start(cmd[0], cmd[1:])

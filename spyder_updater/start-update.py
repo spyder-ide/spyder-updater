@@ -55,6 +55,7 @@ def main(argv):
 
         # Instantiate updater and start installation
         updater = Updater(update_info)
+        updater.start_install()
         updater.show()
 
         # Start the Qt event loop

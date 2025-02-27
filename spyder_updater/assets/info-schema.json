@@ -40,6 +40,21 @@
       "default": "",
       "description": "Initial message to show in the UI."
     },
+    "success_message": {
+      "type": "string",
+      "default": "",
+      "description": "Message to show in the UI when the update was successful."
+    },
+    "failure_message": {
+      "type": "string",
+      "default": "",
+      "description": "Message to show in the UI when the update failed."
+    },
+    "error_message": {
+      "type": "string",
+      "default": "",
+      "description": "Message to show in the UI when there was an error trying to run the update."
+    },
     "details_title": {
       "type": "string",
       "default": "",
@@ -54,6 +69,16 @@
       "type": "integer",
       "default": 10,
       "description": "Font size to use in the UI."
+    },
+    "monospace_font_family": {
+      "type": "string",
+      "default": "",
+      "description": "Monospace font family to use in the UI."
+    },
+    "monospace_font_size": {
+      "type": "integer",
+      "default": 10,
+      "description": "Monospace font size to use in the UI."
     },
     "interface_theme": {
       "type": "string",
@@ -74,9 +99,14 @@
     "window_title",
     "scale_factor",
     "initial_message",
+    "success_message",
+    "failure_message",
+    "error_message",
     "details_title",
     "font_family",
     "font_size",
+    "monospace_font_family",
+    "monospace_font_size",
     "interface_theme",
     "icon_color"
   ]
