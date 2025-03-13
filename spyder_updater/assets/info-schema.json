@@ -89,6 +89,11 @@
       "type": "string",
       "default": "",
       "description": "Color for icons in the UI."
+    },
+    "installation_script": {
+      "type": "string",
+      "default": "",
+      "description": "Path to the installation script (only used for testing)."
     }
   },
   "required": [

@@ -1,0 +1,20 @@
+{
+    "install_file": "",
+    "conda_exec": "",
+    "env_path": "",
+    "update_type": "minor",
+    "window_title": "Spyder update",
+    "scale_factor": 1,
+    "initial_message": "Updating Spyder, this will take a few minutes ...",
+    "success_message": "The update was succesful!<br>Spyder will be launched shortly",
+    "failure_message": "Unfortunately the update failed",
+    "error_message": "There was an error in the update process",
+    "details_title": "Show details",
+    "font_family": "Ubuntu",
+    "font_size": 10,
+    "monospace_font_family": "Ubuntu Mono",
+    "monospace_font_size": 11,
+    "interface_theme": "dark",
+    "icon_color": "#FAFAFA",
+    "installation_script": "failure.sh"
+}

@@ -395,14 +395,22 @@ class Updater(QDialog):
         script_path = str(Path(__file__).parent / 'scripts' / script_name)
 
         # Sub command
-        sub_cmd = [script_path, '-i', self.install_file]
-        if self.update_type != 'major':
-            # Update with conda
-            sub_cmd.extend(['-c', self.conda_exec, '-p', self.env_path])
+        if self._update_info.get("installation_script") is None:
+            # Running the installation scripts
+            sub_cmd = [script_path, '-i', self.install_file]
+            if self.update_type != 'major':
+                # Update with conda
+                sub_cmd.extend(['-c', self.conda_exec, '-p', self.env_path])
 
-        if self.update_type == 'minor':
-            # Rebuild runtime environment
-            sub_cmd.append('-r')
+            if self.update_type == 'minor':
+                # Rebuild runtime environment
+                sub_cmd.append('-r')
+        else:
+            # For testing
+            script = self._update_info["installation_script"]
+            if not Path(script).is_file():
+                script = str(Path(__file__).parents[1] / "tests" / script)
+            sub_cmd = [script]
 
         # Final command assembly
         if os.name == 'nt':
@@ -411,6 +419,10 @@ class Updater(QDialog):
             cmd = [shutil.which("zsh")] + sub_cmd
         else:
             cmd = [shutil.which("bash")] + sub_cmd
+
+        # For testing
+        if self._update_info.get("installation_script") == "error.sh":
+            cmd = ["foo"] + sub_cmd
 
         print(f"""Update command: "{' '.join(cmd)}" """)
         self._process.start(cmd[0], cmd[1:])
