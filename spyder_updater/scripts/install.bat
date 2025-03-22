@@ -19,9 +19,6 @@ chcp 65001>nul
 echo.
 echo =========================================================
 echo Updating Spyder
-echo ---------------
-echo.
-echo IMPORTANT: Do not close this window until it has finished
 echo =========================================================
 echo.
 
@@ -29,18 +26,17 @@ call :wait_for_spyder_quit
 
 IF exist "%conda%" IF exist "%prefix%" (
     call :update_subroutine
-    set /P =Press return to exit and launch Spyder...
     call :launch_spyder
-    goto exit
+    goto :exit
 )
 
 IF exist "%install_file%" (
     call :install_subroutine
-    goto exit
+    goto :exit
 )
 
 :exit
-exit %ERRORLEVEL%
+    exit %ERRORLEVEL%
 
 :wait_for_spyder_quit
     echo Waiting for Spyder to quit...
