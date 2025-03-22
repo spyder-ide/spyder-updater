@@ -32,6 +32,17 @@ def main():
         type=argparse.FileType(),
         help="Path to file that has the info to update Spyder"
     )
+    parser.add_argument(
+        "--version",
+        action="store_true",
+        help="Return spyder-updater version and exit."
+    )
+
+    args = parser.parse_args()
+
+    if args.version:
+        sys.stdout.write(__version__ + "\n")
+        return
 
     # Get info from update file
     update_info = json.loads(args.file.read())
