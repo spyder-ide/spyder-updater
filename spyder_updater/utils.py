@@ -9,9 +9,9 @@ import json
 from pathlib import Path
 
 # Third-party imports
+import jsonschema
 import qdarkstyle
 from qtpy.QtWidgets import QApplication
-import jsonschema
 
 
 def validate_schema(update_info):
