@@ -15,8 +15,8 @@ from qtpy.QtGui import QIcon
 
 # Local imports
 # TODO: Use absolute imports here
-from updater import Updater
-from utils import UpdaterApplication, validate_schema
+from spyder_updater.gui.updater import Updater
+from spyder_updater.gui.utils import UpdaterApplication, validate_schema
 
 
 def main(argv):
@@ -50,7 +50,9 @@ def main(argv):
         app.setApplicationName('Spyder update')
 
         # Set icon
-        icon = QIcon(str(Path(__file__).parent / "assets" / "spyder.svg"))
+        icon = QIcon(
+            str(Path(__file__).parent / "gui" / "assets" / "spyder.svg")
+        )
         app.setWindowIcon(icon)
 
         # Instantiate updater and start installation

@@ -409,7 +409,7 @@ class Updater(QDialog):
             # For testing
             script = self._update_info["installation_script"]
             if not Path(script).is_file():
-                script = str(Path(__file__).parents[1] / "tests" / script)
+                script = str(Path(__file__).parents[2] / "tests" / script)
             sub_cmd = [script]
 
         # Final command assembly
