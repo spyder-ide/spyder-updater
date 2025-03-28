@@ -1,0 +1,69 @@
+{% set version = "0.1.0.dev0" %}
+{% set python_min = "3.9" %}
+{% set build = 0 %}
+
+package:
+  name: spyder-updater
+  version: {{ version }}
+
+source:
+  path: ../
+
+build:
+  number: {{ build }}
+  entry_points:
+    - spyder-updater = spyder_updater.start:main
+  noarch: python
+
+requirements:
+  build:
+    - python >={{ python_min }}  # [unix and (build_platform != target_platform)]
+    - python                     # [win  and (build_platform != target_platform)]
+  host:
+    - python {{ python_min }}  # [unix]
+    - python                   # [win]
+    - pip
+    - setuptools
+    - packaging
+  run:
+    - python >={{ python_min }}  # [unix]
+    - python                     # [win]
+    - jsonschema
+    - pyqt
+    - qdarkstyle
+    - qstylizer
+    - qtawesome
+    - qtpy
+    - superqt
+
+test:
+  requires:
+    - pip
+  commands:
+    - spyder-updater -h
+    - python -m pip check
+  imports:
+    - spyder_updater
+
+about:
+  home: https://www.spyder-ide.org/
+  license: MIT
+  license_file: LICENSE.txt
+  summary: The Scientific Python Development Environment
+  description: |
+    Spyder is a powerful scientific environment written in Python, for Python,
+    and designed by and for scientists, engineers and data analysts.
+    It features a unique combination of the advanced editing, analysis,
+    debugging and profiling functionality of a comprehensive development tool
+    with the data exploration, interactive execution, deep inspection and
+    beautiful visualization capabilities of a scientific package.\n
+    Furthermore, Spyder offers built-in integration with many popular
+    scientific packages, including NumPy, SciPy, Pandas, IPython, QtConsole,
+    Matplotlib, SymPy, and more.\n
+    Beyond its many built-in features, Spyder can be extended even further via
+    third-party plugins.\n
+    Spyder can also be used as a PyQt5 extension library, allowing you to build
+    upon its functionality and embed its components, such as the interactive
+    console or advanced editor, in your own software.
+  doc_url: https://docs.spyder-ide.org/
+  dev_url: https://github.com/spyder-ide/spyder
