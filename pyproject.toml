@@ -39,3 +39,10 @@ Source = "https://github.com/spyder-ide/spyder-updater"
 
 [tool.setuptools.dynamic]
 version = {attr = "spyder_updater.__version__"}
+
+[tool.setuptools.package-data]
+"spyder_updater.scripts" = ["*.bat", "*.sh"]
+"spyder_updater.gui.assets" = ["*.json", "*.svg"]
+
+[project.scripts]
+spyder-updater = "spyder_updater.start:main"

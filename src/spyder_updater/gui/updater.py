@@ -392,7 +392,9 @@ class Updater(QDialog):
     def start_install(self):
         # Install script
         script_name = 'install.' + ('bat' if os.name == 'nt' else 'sh')
-        script_path = str(Path(__file__).parent / 'scripts' / script_name)
+        script_path = str(
+            Path(__file__).parent.parent / 'scripts' / script_name
+        )
 
         # Sub command
         if self._update_info.get("installation_script") is None:

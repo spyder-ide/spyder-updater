@@ -1,0 +1,122 @@
+name: Updater Release
+
+on:
+  pull_request:
+    branches:
+      - main
+
+  release:
+    types:
+      - created
+
+  workflow_dispatch:
+    inputs:
+      pre:
+        description: 'Build as release candidate'
+        required: false
+        default: true
+        type: boolean
+      ssh:
+        # github_cli: gh workflow run updater-release.yml --repo spyder-ide/spyder-updater --ref <branch> -f ssh=true
+        description: 'Enable ssh debugging'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: updater-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build conda package
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -le {0}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Remote SSH Connection
+        if: inputs.ssh
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 60
+        with:
+          detached: true
+
+      - name: Setup Build Environment
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          condarc: |
+            conda_build:
+              pkg_format: '2'
+              zstd_compression_level: '19'
+            channels:
+              - conda-forge
+          environment-name: build
+          create-args: >-
+            python=3.11
+            conda-build
+            conda-lock
+          cache-downloads: true
+          cache-environment: true
+
+      - name: Environment Variables
+        run: |
+          export DISTDIR=${GITHUB_WORKSPACE}/dist
+          echo "DISTDIR=$DISTDIR" >> $GITHUB_ENV
+          mkdir -p $DISTDIR
+
+          export CONDA_BLD_PATH=${RUNNER_TEMP}/conda-bld
+          echo "CONDA_BLD_PATH=$CONDA_BLD_PATH" >> $GITHUB_ENV
+          mkdir -p $CONDA_BLD_PATH
+
+          conda config --set bld_path $CONDA_BLD_PATH
+          conda config --set conda_build.root-dir $CONDA_BLD_PATH
+
+          env | sort
+
+      - name: Build spyder-updater Conda Package
+        run: |
+          conda build --no-anaconda-upload recipe
+
+      - name: Create Conda Lock Files
+        run: |
+          conda-lock lock -c conda-forge --kind explicit --file pyproject.toml --filename-template $DISTDIR/conda-updater-{platform}.lock
+
+      - name: Create Distribution File
+        working-directory: ${{ env.DISTDIR }}
+        run: |
+          mv $CONDA_BLD_PATH/noarch/*.conda .
+          zip -mT spyder-updater *.lock *.conda
+
+      - name: Create Checksums
+        working-directory: ${{ env.DISTDIR }}
+        run: |
+          sha256sum spyder-updater.zip > Spyder-Updater-checksums.txt
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: ${{ env.DISTDIR }}
+          name: spyder-updater-artifact
+
+      - name: Get Release
+        if: github.event_name == 'release'
+        uses: bruceadams/get-release@v1.3.2
+        id: get_release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Upload Release Asset
+        if: github.event_name == 'release'
+        uses: shogo82148/actions-upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: ${{ env.DISTDIR }}/*.*

@@ -1,0 +1,54 @@
+{% set version = "0.1.0.dev0" %}
+{% set python_min = "3.9" %}
+{% set build = 0 %}
+
+package:
+  name: spyder-updater
+  version: {{ version }}
+
+source:
+  path: ../
+
+build:
+  number: {{ build }}
+  entry_points:
+    - spyder-updater = spyder_updater.start:main
+  noarch: python
+
+requirements:
+  build:
+    - python >={{ python_min }}
+  host:
+    - python {{ python_min }}
+    - pip
+    - setuptools
+    - packaging
+  run:
+    - python >={{ python_min }}
+    - jsonschema
+    - pyqt
+    - qdarkstyle
+    - qstylizer
+    - qtawesome
+    - qtpy
+    - superqt
+
+test:
+  requires:
+    - pip
+  commands:
+    - spyder-updater -h
+    - python -m pip check
+  imports:
+    - spyder_updater
+
+about:
+  home: https://www.spyder-ide.org/
+  license: MIT
+  license_file: LICENSE.txt
+  summary: Updater for the Spyder standalone installers
+  description: |
+    It provides a graphical interface and the necessary scripts to perform the
+    update in a separate environment.
+  doc_url: https://docs.spyder-ide.org/
+  dev_url: https://github.com/spyder-ide/spyder-updater

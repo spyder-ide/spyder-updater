@@ -14,12 +14,12 @@ import sys
 from qtpy.QtGui import QIcon
 
 # Local imports
-# TODO: Use absolute imports here
+from spyder_updater import __version__
 from spyder_updater.gui.updater import Updater
 from spyder_updater.gui.utils import UpdaterApplication, validate_schema
 
 
-def main(argv):
+def main():
     """Run updater."""
     # Parser instance
     parser = argparse.ArgumentParser(usage="update-spyder [options]")
@@ -32,9 +32,19 @@ def main(argv):
         type=argparse.FileType(),
         help="Path to file that has the info to update Spyder"
     )
+    parser.add_argument(
+        "--version",
+        action="store_true",
+        help="Return spyder-updater version and exit."
+    )
+
+    args = parser.parse_args()
+
+    if args.version:
+        sys.stdout.write(__version__ + "\n")
+        return
 
     # Get info from update file
-    args = parser.parse_args(argv[1:])
     update_info = json.loads(args.file.read())
 
     # Validate that info conforms to our schema
@@ -65,4 +75,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()

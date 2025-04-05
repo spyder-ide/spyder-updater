@@ -1,6 +1,4 @@
-#!/bin/bash -i
-
-unset HISTFILE  # Do not write to history with interactive shell
+#!/bin/bash
 
 while getopts "i:c:p:r" option; do
     case "$option" in
@@ -72,9 +70,6 @@ install_spyder(){
 cat <<EOF
 =========================================================
 Updating Spyder
----------------
-
-IMPORTANT: Do not close this window until it has finished
 =========================================================
 
 EOF
@@ -88,13 +83,7 @@ echo "Spyder quit."
 
 if [[ -e "$conda" && -d "$prefix" ]]; then
     update_spyder
-    read -p "Press return to exit and launch Spyder..."
     launch_spyder
 else
     install_spyder
-fi
-
-if [[ "$OSTYPE" = "darwin"* ]]; then
-    # Close the Terminal window that was opened for this process
-    osascript -e 'tell application "Terminal" to close first window' &
 fi
