@@ -416,7 +416,7 @@ class Updater(QDialog):
 
         # Final command assembly
         if os.name == 'nt':
-            cmd = ['start', '"Update Spyder"'] + sub_cmd
+            cmd = ['cmd', '/c'] + sub_cmd
         elif sys.platform == "darwin":
             cmd = [shutil.which("zsh")] + sub_cmd
         else:
