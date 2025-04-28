@@ -10,6 +10,15 @@ while getopts "i:c:p:r" option; do
 done
 shift $(($OPTIND - 1))
 
+wait_for_spyder_quit(){
+    while [[ $(pgrep spyder 2> /dev/null) ]]; do
+        echo "Waiting for Spyder to quit..."
+        sleep 1
+    done
+
+    echo "Spyder has quit."
+}
+
 update_spyder(){
     # Unzip installer file
     pushd $(dirname $install_file)
@@ -53,37 +62,6 @@ launch_spyder(){
     fi
 }
 
-install_spyder(){
-    # First uninstall Spyder
-    uninstall_script="$prefix/../../uninstall-spyder.sh"
-    if [[ -f "$uninstall_script" ]]; then
-        echo "Uninstalling Spyder..."
-        echo ""
-        $uninstall_script
-        [[ $? > 0 ]] && return
-    fi
-
-    # Run installer
-    [[ "$OSTYPE" = "darwin"* ]] && open $install_file || sh $install_file
-}
-
-cat <<EOF
-=========================================================
-Updating Spyder
-=========================================================
-
-EOF
-
-while [[ $(pgrep spyder 2> /dev/null) ]]; do
-    echo "Waiting for Spyder to quit..."
-    sleep 1
-done
-
-echo "Spyder quit."
-
-if [[ -e "$conda" && -d "$prefix" ]]; then
-    update_spyder
-    launch_spyder
-else
-    install_spyder
-fi
+wait_for_spyder_quit
+update_spyder
+launch_spyder

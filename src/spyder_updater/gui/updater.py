@@ -399,10 +399,12 @@ class Updater(QDialog):
         # Sub command
         if self._update_info.get("installation_script") is None:
             # Running the installation scripts
-            sub_cmd = [script_path, '-i', self.install_file]
-            if self.update_type != 'major':
-                # Update with conda
-                sub_cmd.extend(['-c', self.conda_exec, '-p', self.env_path])
+            sub_cmd = [
+                script_path,
+                '-i', self.install_file,
+                '-c', self.conda_exec,
+                '-p', self.env_path
+            ]
 
             if self.update_type == 'minor':
                 # Rebuild runtime environment
