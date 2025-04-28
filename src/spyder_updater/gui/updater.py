@@ -389,7 +389,7 @@ class Updater(QDialog):
 
     # ---- Public API
     # -------------------------------------------------------------------------
-    def start_install(self):
+    def start_install(self, start_spyder: bool):
         # Install script
         script_name = 'install.' + ('bat' if os.name == 'nt' else 'sh')
         script_path = str(
@@ -409,6 +409,9 @@ class Updater(QDialog):
             if self.update_type == 'minor':
                 # Rebuild runtime environment
                 sub_cmd.append('-r')
+
+            if start_spyder:
+                sub_cmd.append("-s")
         else:
             # For testing
             script = self._update_info["installation_script"]

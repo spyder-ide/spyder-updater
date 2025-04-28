@@ -1,11 +1,12 @@
 #!/bin/bash
 
-while getopts "i:c:p:r" option; do
+while getopts "i:c:p:rs" option; do
     case "$option" in
         (i) install_file=$OPTARG ;;
         (c) conda=$OPTARG ;;
         (p) prefix=$OPTARG ;;
         (r) rebuild=true ;;
+        (s) start_spyder=true ;;
     esac
 done
 shift $(($OPTIND - 1))
@@ -64,4 +65,4 @@ launch_spyder(){
 
 wait_for_spyder_quit
 update_spyder
-launch_spyder
+[[ "$start_spyder" == "true" ]] && launch_spyder

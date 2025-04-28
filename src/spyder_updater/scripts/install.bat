@@ -8,6 +8,7 @@ IF "%~1"=="-i" set install_file=%~2& SHIFT
 IF "%~1"=="-c" set conda=%~2& SHIFT
 IF "%~1"=="-p" set prefix=%~2& SHIFT
 If "%~1"=="-r" set rebuild=true
+if "%~1"=="-s" set start_spyder=true
 
 SHIFT
 GOTO parse
@@ -18,7 +19,7 @@ chcp 65001>nul
 
 call :wait_for_spyder_quit
 call :update_spyder
-call :launch_spyder
+if "%start_spyder%"=="true" call :launch_spyder
 
 :exit
     exit %ERRORLEVEL%
