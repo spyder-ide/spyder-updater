@@ -9,5 +9,5 @@ It provides a graphical interface and the necessary scripts to perform the updat
 You can check how the updater looks by running the following command from the root directory of this repo:
 
 ```bash
-python spyder_updater/start-update.py --update-info-file tests/info-success.json
+python src/spyder_updater/start.py --update-info-file src/tests/info-success.json
 ```
