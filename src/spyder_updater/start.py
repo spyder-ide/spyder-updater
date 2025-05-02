@@ -33,6 +33,12 @@ def main():
         help="Path to file that has the info to update Spyder"
     )
     parser.add_argument(
+        "--start-spyder",
+        action="store_true",
+        default=False,
+        help="Start spyder after successfully installing the update."
+    )
+    parser.add_argument(
         "--version",
         action="store_true",
         help="Return spyder-updater version and exit."
@@ -67,7 +73,7 @@ def main():
 
         # Instantiate updater and start installation
         updater = Updater(update_info)
-        updater.start_install()
+        updater.start_install(args.start_spyder)
         updater.show()
 
         # Start the Qt event loop
