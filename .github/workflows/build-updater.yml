@@ -94,11 +94,6 @@ jobs:
           mv $CONDA_BLD_PATH/noarch/*.conda .
           zip -mT spyder-updater *.lock *.conda
 
-      - name: Create Checksums
-        working-directory: ${{ env.DISTDIR }}
-        run: |
-          sha256sum spyder-updater.zip > Spyder-Updater-checksums.txt
-
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
