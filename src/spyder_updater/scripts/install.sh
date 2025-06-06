@@ -65,4 +65,6 @@ launch_spyder(){
 
 wait_for_spyder_quit
 update_spyder
-[[ "$start_spyder" == "true" ]] && launch_spyder
+if [[ "$start_spyder" == "true" ]]; then
+    launch_spyder
+fi
