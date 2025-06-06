@@ -22,7 +22,7 @@
     "update_type": {
       "type": "string",
       "default": "minor",
-      "enum": ["minor", "major"],
+      "enum": ["micro", "minor", "major"],
       "description": "Type of update to be performed."
     },
     "window_title": {
