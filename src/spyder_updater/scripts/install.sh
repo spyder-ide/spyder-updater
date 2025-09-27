@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 while getopts "i:c:p:rs" option; do
     case "$option" in
@@ -21,7 +22,6 @@ wait_for_spyder_quit(){
 }
 
 update_spyder(){
-    # Unzip installer file
     pushd $(dirname $install_file)
 
     # Determine OS type
