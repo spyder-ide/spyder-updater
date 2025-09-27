@@ -19,11 +19,12 @@ from qtpy.QtGui import QImage, QPainter, QPixmap, QTextCursor
 from qtpy.QtSvg import QSvgRenderer
 from qtpy.QtWidgets import (
     QDialog,
+    QHBoxLayout,
     QLabel,
     QLayout,
     QPlainTextEdit,
+    QProgressBar,
     QPushButton,
-    QSpacerItem,
     QVBoxLayout
 )
 from superqt import QCollapsible
@@ -236,7 +237,7 @@ class Updater(QDialog):
 
         # Timer to close the window automatically after the update finishes
         self._close_timer = QTimer(self)
-        self._close_timer.setInterval(8000)
+        self._close_timer.setInterval(6000)
         self._close_timer.timeout.connect(self.close)
 
         # To check if the update is done
@@ -248,10 +249,9 @@ class Updater(QDialog):
             svg_to_scaled_pixmap(
                 self._update_info["scale_factor"],
                 self._update_info["interface_theme"],
-                rescale=0.7
+                rescale=0.3
             )
         )
-        image_label.setAlignment(Qt.AlignCenter)
         image_label_qss = qstylizer.style.StyleSheet()
         image_label_qss.QLabel.setValues(border="0px")
         image_label.setStyleSheet(image_label_qss.toString())
@@ -260,28 +260,20 @@ class Updater(QDialog):
         self._text_label = QLabel(
             self._update_info["initial_message"], parent=self
         )
-        self._text_label.setAlignment(Qt.AlignCenter)
         self._text_label.setWordWrap(True)
+        self._text_label.setMinimumWidth(500)
         text_label_qss = qstylizer.style.StyleSheet()
         text_label_qss.QLabel.setValues(
-            fontSize=f"{self._update_info['font_size'] + 5}pt",
+            fontSize=f"{self._update_info['font_size'] + 3}pt",
             border="0px"
         )
         self._text_label.setStyleSheet(text_label_qss.toString())
 
-        # Spinner
-        self._spin_widget = qta.IconWidget()
-        self._spin = qta.Spin(self._spin_widget, interval=3)
-        spin_icon = qta.icon(
-            "mdi.loading",
-            color=self._update_info["icon_color"],
-            animation=self._spin
-        )
+        # Progress bar
+        self._progress_bar = QProgressBar(self)
+        self._progress_bar.setFixedHeight(15)
 
-        self._spin_widget.setIconSize(QSize(36, 36))
-        self._spin_widget.setIcon(spin_icon)
-        self._spin_widget.setStyleSheet(image_label_qss.toString())
-        self._spin_widget.setAlignment(Qt.AlignCenter)
+        self._progress_bar.setRange(0, 0)
 
         # Area to show stdout/stderr streams of the process that performs the
         # update
@@ -308,17 +300,32 @@ class Updater(QDialog):
             lambda: details.expand(animate=False)
         )
 
-        # Setup layout
+        # Top layout
+        top_layout = QHBoxLayout()
+        top_layout.addWidget(image_label)
+        top_layout.addSpacing(6)
+        top_layout.addWidget(self._text_label)
+        top_layout.addStretch()
+
+        # Progress bar layout. This is necessary to make the progress bar have
+        # the same width as the other widgets
+        progress_layout = QHBoxLayout()
+        progress_layout.addSpacing(8)
+        progress_layout.addWidget(self._progress_bar)
+        progress_layout.addSpacing(8)
+
+        # Final layout
         layout = QVBoxLayout()
         layout.setSpacing(0)
-        layout.addStretch(1)
-        layout.addWidget(image_label)
-        layout.addWidget(self._text_label)
-        layout.addItem(QSpacerItem(12, 12))
-        layout.addWidget(self._spin_widget)
-        layout.addItem(QSpacerItem(8, 8))
+        layout.setContentsMargins(18, 18, 18, 18)
+
+        layout.addStretch()
+        layout.addLayout(top_layout)
+        layout.addSpacing(12)
+        layout.addLayout(progress_layout)
+        layout.addSpacing(8)
         layout.addWidget(details)
-        layout.setContentsMargins(24, 24, 24, 24)
+
         self.setLayout(layout)
         self.layout().setSizeConstraint(QLayout.SetFixedSize)
 
@@ -340,8 +347,17 @@ class Updater(QDialog):
 
     def _when_update_is_done(self):
         self._update_done = True
-        self._spin.stop()
-        self._spin_widget.hide()
+
+        # Hide progress bar because it's not necessary anymore.
+        self._progress_bar.hide()
+
+        # Reduce size of space between top_layout and details to make the
+        # dialog look good.
+        self.layout().itemAt(2).changeSize(4, 4)
+
+        # Hide space between progress_layout and details because there's no
+        # need for it if progress_bar is hidden.
+        self.layout().itemAt(4).changeSize(0, 0)
 
     def _expand_details(self):
         # We need to use a timer so that Qt centers the dialog first
