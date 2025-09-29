@@ -29,11 +29,11 @@ update_spyder(){
     [[ "$(arch)" = "arm64" ]] && os=${os}-arm64 || os=${os}-64
 
     echo "Updating Spyder base environment..."
-    $conda update --name base --yes --file "conda-base-${os}.lock"
+    $conda update --name base --yes --quiet --file "conda-base-${os}.lock"
 
     if [[ -n "$rebuild" ]]; then
         echo "Rebuilding Spyder runtime environment..."
-        $conda remove --prefix $prefix --all --yes
+        $conda remove --prefix $prefix --all --yes --quiet
         mkdir -p $prefix/Menu
         touch $prefix/Menu/conda-based-app
         conda_cmd=create
@@ -41,10 +41,10 @@ update_spyder(){
         echo "Updating Spyder runtime environment..."
         conda_cmd=update
     fi
-    $conda $conda_cmd --prefix $prefix --yes --file "conda-runtime-${os}.lock"
+    $conda $conda_cmd --prefix $prefix --yes --quiet --file "conda-runtime-${os}.lock"
 
     echo "Cleaning packages and temporary files..."
-    $conda clean --yes --packages --tempfiles $prefix
+    $conda clean --yes --quiet --packages --tempfiles $prefix
 }
 
 launch_spyder(){

@@ -40,11 +40,11 @@ if "%start_spyder%"=="true" call :launch_spyder
     pushd %installer_dir%
 
     echo Updating Spyder base environment...
-    %conda% update --name base --yes --file conda-base-win-64.lock || exit /b %errorlevel%
+    %conda% update --name base --yes --quiet --file conda-base-win-64.lock || exit /b %errorlevel%
 
     if "%rebuild%"=="true" (
         echo Rebuilding Spyder runtime environment...
-        %conda% remove --prefix %prefix% --all --yes || exit /b %errorlevel%
+        %conda% remove --prefix %prefix% --all --yes --quiet || exit /b %errorlevel%
         mkdir %prefix%\Menu
         echo. > "%prefix%\Menu\conda-based-app"
         set conda_cmd=create
@@ -52,10 +52,10 @@ if "%start_spyder%"=="true" call :launch_spyder
         echo Updating Spyder runtime environment...
         set conda_cmd=update
     )
-    %conda% %conda_cmd% --prefix %prefix% --yes --file conda-runtime-win-64.lock || exit /b %errorlevel%
+    %conda% %conda_cmd% --prefix %prefix% --yes --quiet --file conda-runtime-win-64.lock || exit /b %errorlevel%
 
     echo Cleaning packages and temporary files...
-    %conda% clean --yes --packages --tempfiles %prefix%
+    %conda% clean --yes --quiet --packages --tempfiles %prefix%
     goto :EOF
 
 :launch_spyder
