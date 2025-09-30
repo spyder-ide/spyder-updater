@@ -280,6 +280,7 @@ class Updater(QDialog):
         self._streams_area = QPlainTextEdit(self)
         self._streams_area.setMinimumHeight(300)
         self._streams_area.setReadOnly(True)
+        self._streams_area.setLineWrapMode(QPlainTextEdit.NoWrap)
         streams_areda_css = qstylizer.style.StyleSheet()
         streams_areda_css.QPlainTextEdit.setValues(
             fontFamily=f"{self._update_info['monospace_font_family']}",
@@ -342,7 +343,8 @@ class Updater(QDialog):
     # -------------------------------------------------------------------------
     def _add_text_to_streams_area(self, text):
         self._streams_area.moveCursor(QTextCursor.End)
-        self._streams_area.appendHtml(text)
+        # Note appendPlainText starts new paragraph, so strip \n.
+        self._streams_area.appendPlainText(text.strip("\n"))
         self._streams_area.moveCursor(QTextCursor.End)
 
     def _when_update_is_done(self):
