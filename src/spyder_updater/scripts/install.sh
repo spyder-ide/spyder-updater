@@ -13,7 +13,7 @@ done
 shift $(($OPTIND - 1))
 
 wait_for_spyder_quit(){
-    while [[ $(pgrep spyder 2> /dev/null) ]]; do
+    while [[ $(pgrep -f spyder-runtime/bin 2> /dev/null) ]]; do
         echo "Waiting for Spyder to quit..."
         sleep 1
     done
