@@ -27,9 +27,9 @@ if "%start_spyder%"=="true" call :launch_spyder
 :wait_for_spyder_quit
     echo Waiting for Spyder to quit...
     :loop
-    tasklist /v /fi "ImageName eq pythonw.exe" /fo csv 2>NUL | find "Spyder">NUL
+    tasklist /v /fi "ImageName eq pythonw.exe" /fo csv 2>NUL | find "Spyder" >NUL
     IF "%ERRORLEVEL%"=="0" (
-        timeout /t 1 /nobreak > nul
+        C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -NonInteractive -Command "Start-Sleep -Seconds 1"
         goto loop
     )
     echo Spyder has quit.
